@@ -17,7 +17,7 @@ class RedditInstance:
         self.client_secret = client_secret
         self.user_agent = user_agent
 
-    async def __instantiate_reddit(self) -> Reddit:
+    async def _instantiate_reddit(self) -> Reddit:
         self.reddit = Reddit(
             client_id=self.client_id,
             client_secret=self.client_secret,
@@ -30,7 +30,7 @@ class RedditInstance:
     ) -> Callable[[Message], Coroutine[Any, Any, None]]:
         try:
             subreddit_instance = await (
-                self.reddit or await self.__instantiate_reddit()
+                self.reddit or await self._instantiate_reddit()
             ).subreddit(subreddit, fetch=True)
         except (Redirect, NotFound):
             return fp.error("Subreddit not found")
@@ -39,15 +39,14 @@ class RedditInstance:
             return fp.error("Nsfw subreddit")
 
         top_post: Submission | None = None
-        posts_seen = 0
-        subreddit_instance.top(time_filter="hour")
-        async for submission in subreddit_instance.top(time_filter="hour"):
+        async for submission in subreddit_instance.top(time_filter="hour", limit=10):
             if not submission.over_18:
                 top_post = submission
                 break
-            posts_seen += 1
-            if posts_seen > 10:
-                return fp.error("More than 10 nsfw post in hourly top")
+        else:
+            return fp.error("Could not find sfw post in top feed")
+
+        assert top_post is not None
 
         match getattr(top_post, "post_hint", None):
             case "image":
