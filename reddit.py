@@ -6,6 +6,7 @@ from asyncpraw import Reddit
 from asyncpraw.reddit import Submission
 
 from utils import fetched_post as fp
+from utils.download import download
 from utils.enums import MediaType
 
 
@@ -60,7 +61,7 @@ class RedditInstance:
                 )
             case "hosted:video":
                 return fp.media(
-                    top_post.media["reddit_video"]["fallback_url"],
+                    download(top_post.url),
                     top_post.title,
                     MediaType.VIDEO,
                 )

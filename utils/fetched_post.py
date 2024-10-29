@@ -1,6 +1,6 @@
 from typing import Any
 from collections.abc import Callable, Coroutine
-from aiogram.types import Message
+from aiogram.types import FSInputFile, Message
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.enums import ParseMode
 from utils.enums import MediaType
@@ -26,8 +26,14 @@ def media(
             MediaType.VIDEO: bot.send_video,
         }[media_type]
 
+        if not url:
+            await message.answer("Couldn't retrieve media")
+            return
+
+        media = FSInputFile(url) if media_type == MediaType.VIDEO else url
+
         try:
-            await send(message.chat.id, url, caption=title)
+            await send(message.chat.id, media, caption=title)
         except TelegramBadRequest as e:
             await message.answer(f"Couldn't send media: {e.message}")
 
