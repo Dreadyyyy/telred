@@ -1,0 +1,4 @@
+aiogram
+asyncpraw
+asyncprawcore
+python-dotenv
