@@ -1,16 +1,19 @@
-from typing import Any, final
+from typing import final
 
-from aiogram.enums import ParseMode, parse_mode
+from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.utils.media_group import MediaGroupBuilder
+from asyncpraw.reddit import Submission
 
 from utils.enums import MediaType
-from aiogram.types import InputFile, Message, MessageEntity
+from aiogram.types import InputFile, Message
 
 
 @final
 class response:
-    def __init__(self, post: Any | None, error: str = "Error fetching post") -> None:
+    def __init__(
+        self, post: Submission | None, error: str = "Error fetching post"
+    ) -> None:
         if not post:
             self.text = error
         else:
@@ -19,7 +22,7 @@ class response:
             self.media = self._get_media(post)
 
     @staticmethod
-    def _get_media_type(post: Any) -> MediaType | None:
+    def _get_media_type(post: Submission) -> MediaType | None:
         if getattr(post, "is_gallery", False):
             return MediaType.GALLERY
 
@@ -28,7 +31,7 @@ class response:
         elif getattr(post, "media", {}).get("reddit_video", None):
             return MediaType.VIDEO
 
-    def _get_media(self, post: Any) -> list[InputFile | str] | None:
+    def _get_media(self, post: Submission) -> list[InputFile | str] | None:
         if not self.media_type:
             return
 
