@@ -2,4 +2,3 @@ aiogram
 asyncpraw
 asyncprawcore
 python-dotenv
-redvid

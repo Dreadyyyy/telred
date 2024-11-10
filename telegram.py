@@ -1,3 +1,4 @@
+from typing import final
 from aiogram import Bot, Dispatcher
 from aiogram.filters.command import Command
 from aiogram.types import Message
@@ -5,6 +6,7 @@ from aiogram.types import Message
 from reddit import RedditInstance
 
 
+@final
 class TelegramInstance:
     dp = Dispatcher()
 
