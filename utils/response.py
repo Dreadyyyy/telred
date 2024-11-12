@@ -1,16 +1,20 @@
-from typing import Any, final
+from typing import final
 
-from aiogram.enums import ParseMode, parse_mode
+from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.utils.media_group import MediaGroupBuilder
+from asyncpraw.reddit import Submission
 
+from utils.download import download
 from utils.enums import MediaType
-from aiogram.types import InputFile, Message, MessageEntity
+from aiogram.types import InputFile, Message, FSInputFile
 
 
 @final
 class response:
-    def __init__(self, post: Any | None, error: str = "Error fetching post") -> None:
+    def __init__(
+        self, post: Submission | None, error: str = "Error fetching post"
+    ) -> None:
         if not post:
             self.text = error
         else:
@@ -19,7 +23,7 @@ class response:
             self.media = self._get_media(post)
 
     @staticmethod
-    def _get_media_type(post: Any) -> MediaType | None:
+    def _get_media_type(post: Submission) -> MediaType:
         if getattr(post, "is_gallery", False):
             return MediaType.GALLERY
 
@@ -28,25 +32,33 @@ class response:
         elif getattr(post, "media", {}).get("reddit_video", None):
             return MediaType.VIDEO
 
-    def _get_media(self, post: Any) -> list[InputFile | str] | None:
-        if not self.media_type:
-            return
+        return MediaType.NONE
 
+    async def _get_media(self, post: Submission) -> list[InputFile | str] | None:
         match self.media_type:
             case MediaType.IMAGE | MediaType.GIF:
                 return [post.url]
             case MediaType.VIDEO:
-                return [post.media["reddit_video"]["fallback_url"]]
+                return [
+                    FSInputFile(
+                        await download(
+                            post.media["reddit_video"]["fallback_url"],
+                            post.media["reddit_video"]["has_audio"],
+                        )
+                    )
+                ]
             case MediaType.GALLERY:
                 return [
                     val["p"][0]["u"].split("?")[0].replace("preview", "i")
                     for val in list(post.media_metadata.values())
                 ]
+            case MediaType.NONE:
+                return
 
     async def __call__(self, message: Message) -> Message | list[Message]:
         bot = message.bot or exit("Couldn't access bot instance")
 
-        if not self.media_type or not self.media:
+        if not (media := await self.media):
             return await message.answer(
                 self.text,
                 parse_mode=ParseMode.HTML,
@@ -54,7 +66,7 @@ class response:
 
         if self.media_type == MediaType.GALLERY:
             media_group = MediaGroupBuilder(caption=self.text)
-            for image in self.media:
+            for image in media:
                 media_group.add_photo(image, parse_mode=ParseMode.HTML)
             return await bot.send_media_group(message.chat.id, media_group.build())
 
@@ -67,7 +79,7 @@ class response:
         try:
             return await send(
                 message.chat.id,
-                self.media[0],
+                media[0],
                 caption=self.text,
                 parse_mode=ParseMode.HTML,
             )
