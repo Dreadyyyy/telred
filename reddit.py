@@ -26,8 +26,8 @@ class RedditInstance:
             subreddit_instance = await (
                 self.reddit or await self._instantiate_reddit()
             ).subreddit(subreddit, fetch=True)
-        except Exception as e:
-            return response(None, f"Error occured while fetching subreddit: {e}")
+        except:
+            return response(None, "Error occured while fetching subreddit")
 
         top_post = await subreddit_instance.top(time_filter="hour").__anext__()
 
