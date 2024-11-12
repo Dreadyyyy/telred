@@ -7,3 +7,12 @@ class MediaType(Enum):
     GIF = 2
     VIDEO = 3
     GALLERY = 4
+
+
+class TimeFilter(Enum):
+    ALL = "all"
+    DAY = "day"
+    HOUR = "hour"
+    MONTH = "month"
+    WEEK = "week"
+    YEAR = "year"
