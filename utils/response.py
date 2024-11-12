@@ -1,3 +1,4 @@
+import logging
 from typing import final
 
 from aiogram.enums import ParseMode
@@ -84,4 +85,7 @@ class response:
                 parse_mode=ParseMode.HTML,
             )
         except TelegramBadRequest as e:
-            return await message.answer(f"Couldn't send media: {e.message}")
+            logging.error(
+                f"The following error occured when sending media of type {self.media_type}: {e}"
+            )
+            return await message.answer(f"Couldn't send media")

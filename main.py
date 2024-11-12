@@ -5,7 +5,8 @@ from reddit import RedditInstance
 from telegram import TelegramInstance
 from dotenv import dotenv_values as env
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(filename="info.log", level=logging.INFO)
+logging.basicConfig(filename="error.log", level=logging.ERROR)
 
 
 async def main() -> None:

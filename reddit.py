@@ -1,5 +1,6 @@
 from typing import final
 from asyncpraw import Reddit
+from asyncprawcore import logging
 
 from utils.response import response
 
@@ -26,7 +27,10 @@ class RedditInstance:
             subreddit_instance = await (
                 self.reddit or await self._instantiate_reddit()
             ).subreddit(subreddit, fetch=True)
-        except:
+        except Exception as e:
+            logging.error(
+                f"The following error occured when fetching instance of subreddit {subreddit}: {e}"
+            )
             return response(None, "Error occured while fetching subreddit")
 
         top_post = await subreddit_instance.top(time_filter="hour").__anext__()
