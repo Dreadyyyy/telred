@@ -2,3 +2,5 @@ aiogram
 asyncpraw
 asyncprawcore
 python-dotenv
+aiohttp
+aiofile
