@@ -1,4 +1,4 @@
-from typing import final
+from typing import final, get_args
 from aiogram import Bot, Dispatcher
 from aiogram.filters.command import Command
 from aiogram.types import Message
@@ -22,12 +22,10 @@ class TelegramInstance:
         vals = cmnd.split(" ")
 
         if len(vals) == 2:
-            (_, subreddit), time_filter = vals, TimeFilter.HOUR
+            (_, subreddit), time_filter = vals, "hour"
         elif len(vals) == 3:
             _, subreddit, time_filter = vals
-            try:
-                time_filter = TimeFilter[time_filter.upper()]
-            except KeyError:
+            if time_filter not in get_args(TimeFilter):
                 raise ValueError(
                     "Time filter should be one of the following values: all, day, hour, month, week, year"
                 )

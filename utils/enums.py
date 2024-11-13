@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Literal
 
 
 class MediaType(Enum):
@@ -9,10 +10,4 @@ class MediaType(Enum):
     GALLERY = 4
 
 
-class TimeFilter(Enum):
-    ALL = "all"
-    DAY = "day"
-    HOUR = "hour"
-    MONTH = "month"
-    WEEK = "week"
-    YEAR = "year"
+TimeFilter = Literal["all", "day", "hour", "month", "week", "year"]

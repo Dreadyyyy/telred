@@ -34,9 +34,7 @@ class RedditInstance:
             )
             return response(None, "Error occured while fetching subreddit")
 
-        top_post = await anext(
-            subreddit_instance.top(time_filter=time_filter.value), None
-        )
+        top_post = await anext(subreddit_instance.top(time_filter=time_filter), None)
 
         if top_post is None:
             return response(None, "No posts during this time window")
