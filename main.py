@@ -1,12 +1,16 @@
 import asyncio
-import logging
+import logging as logg
 
 from reddit import RedditInstance
 from telegram import TelegramInstance
 from dotenv import dotenv_values as env
 
-logging.basicConfig(filename="info.log", level=logging.INFO)
-logging.basicConfig(filename="error.log", level=logging.ERROR)
+logg.basicConfig(
+    handlers=[logg.FileHandler("info.log"), logg.StreamHandler()], level=logg.INFO
+)
+logg.basicConfig(
+    handlers=[logg.FileHandler("error.log"), logg.StreamHandler()], level=logg.ERROR
+)
 
 
 async def main() -> None:

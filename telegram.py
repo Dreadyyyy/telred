@@ -18,26 +18,31 @@ class TelegramInstance:
 
     @staticmethod
     def process_args(cmnd: str) -> tuple[str, TimeFilter]:
-        """Raises ValueError if there is too few arguments or time filter is invalid"""
+        """Raises ValueError if there are too few arguments or time filter is invalid"""
         vals = cmnd.split(" ")
 
         if len(vals) == 2:
             (_, subreddit), time_filter = vals, "hour"
         elif len(vals) == 3:
             _, subreddit, time_filter = vals
-            if time_filter not in get_args(TimeFilter):
-                raise ValueError(
-                    "Time filter should be one of the following values: all, day, hour, month, week, year"
-                )
         else:
             raise ValueError("Command signature: command subreddit [time]")
+
+        if time_filter not in get_args(TimeFilter):
+            raise ValueError(
+                "Time filter should be one of the following values: all, day, hour, month, week, year"
+            )
 
         return subreddit, time_filter
 
     def _wrapper(self) -> None:
 
+        @self.dp.message(Command("/start"))
+        async def _(message: Message) -> None:
+            await message.answer("Welcome to telred!")
+
         @self.dp.message(Command("top"))
-        async def top(message: Message) -> None:
+        async def _(message: Message) -> None:
             try:
                 subreddit, time_filter = self.process_args(message.text or "")
             except ValueError as e:

@@ -40,14 +40,15 @@ class response:
             case MediaType.IMAGE | MediaType.GIF:
                 return [post.url]
             case MediaType.VIDEO:
-                return [
-                    FSInputFile(
-                        await download(
-                            post.media["reddit_video"]["fallback_url"],
-                            post.media["reddit_video"]["has_audio"],
+                return (
+                    [post.media["reddit_video"]["fallback_url"]]
+                    if not post.media["reddit_video"]["has_audio"]
+                    else [
+                        FSInputFile(
+                            await download(post.media["reddit_video"]["fallback_url"])
                         )
-                    )
-                ]
+                    ]
+                )
             case MediaType.GALLERY:
                 return [
                     val["p"][0]["u"].split("?")[0].replace("preview", "i")
