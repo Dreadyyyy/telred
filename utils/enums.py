@@ -8,6 +8,7 @@ class MediaType(Enum):
     GIF = 2
     VIDEO = 3
     GALLERY = 4
+    LINK = 5
 
 
 TimeFilter = Literal["all", "day", "hour", "month", "week", "year"]

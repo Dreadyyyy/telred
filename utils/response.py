@@ -17,11 +17,11 @@ class response:
         self, post: Submission | None, error: str = "Error fetching post"
     ) -> None:
         if not post:
-            self.text = error
             self.media_type = MediaType.NONE
+            self.text = error
         else:
-            self.text = f"<b>{post.title}</b>\n<tg-spoiler>{post.selftext}</tg-spoiler>"
             self.media_type = self._get_media_type(post)
+            self.text = self._get_text(post)
             self.media = self._get_media(post)
 
     @staticmethod
@@ -33,8 +33,16 @@ class response:
             return MediaType.GIF if "gif" in post.url else MediaType.IMAGE
         elif (getattr(post, "media", {}) or {}).get("reddit_video", None):
             return MediaType.VIDEO
+        elif post.id not in post.url:
+            return MediaType.LINK
 
         return MediaType.NONE
+
+    def _get_text(self, post: Submission) -> str:
+        text = f"<b>{post.title}</b>\n<tg-spoiler>{post.selftext}</tg-spoiler>"
+        if self.media_type == MediaType.LINK:
+            text += f"\n{post.url}"
+        return text
 
     async def _get_media(self, post: Submission) -> list[InputFile | str] | None:
         match self.media_type:
@@ -55,37 +63,41 @@ class response:
                     val["p"][0]["u"].split("?")[0].replace("preview", "i")
                     for val in list(post.media_metadata.values())
                 ]
-            case MediaType.NONE:
+            case MediaType.NONE | MediaType.LINK:
                 return
 
     async def __call__(self, message: Message) -> Message | list[Message]:
         bot = message.bot or exit("Couldn't access bot instance")
 
-        if self.media_type == MediaType.NONE or not (media := await self.media):
-            return await message.answer(
+        answer = None
+        if self.media_type in (MediaType.NONE, MediaType.LINK) or not (
+            media := await self.media
+        ):
+            answer = message.answer(
                 self.text,
                 parse_mode=ParseMode.HTML,
             )
-
-        if self.media_type == MediaType.GALLERY:
+        elif self.media_type == MediaType.GALLERY:
             media_group = MediaGroupBuilder(caption=self.text)
             for image in media:
                 media_group.add_photo(image, parse_mode=ParseMode.HTML)
-            return await bot.send_media_group(message.chat.id, media_group.build())
+            answer = bot.send_media_group(message.chat.id, media_group.build())
+        else:
+            send = {
+                MediaType.IMAGE: bot.send_photo,
+                MediaType.GIF: bot.send_animation,
+                MediaType.VIDEO: bot.send_video,
+            }[self.media_type]
 
-        send = {
-            MediaType.IMAGE: bot.send_photo,
-            MediaType.GIF: bot.send_animation,
-            MediaType.VIDEO: bot.send_video,
-        }[self.media_type]
-
-        try:
-            return await send(
+            answer = send(
                 message.chat.id,
                 media[0],
                 caption=self.text,
                 parse_mode=ParseMode.HTML,
             )
+
+        try:
+            return await answer
         except TelegramBadRequest as e:
             logging.error(
                 f"The following error occured when sending media of type {self.media_type}: {e}"
