@@ -10,12 +10,7 @@ class MediaType(Enum):
     GALLERY = 4
 
 
-class Feed(Enum):
-    TOP = 0
-    HOT = 1
-    NEW = 2
-    CONTROVERSIAL = 3
-    RISING = 4
-
-
 TimeFilter = Literal["all", "day", "hour", "month", "week", "year"]
+
+
+FeedType = Literal["top", "hot", "new", "controversial", "rising"]

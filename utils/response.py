@@ -18,6 +18,7 @@ class response:
     ) -> None:
         if not post:
             self.text = error
+            self.media_type = MediaType.NONE
         else:
             self.text = f"<b>{post.title}</b>\n<tg-spoiler>{post.selftext}</tg-spoiler>"
             self.media_type = self._get_media_type(post)
@@ -30,7 +31,7 @@ class response:
 
         if getattr(post, "post_hint", "") == "image":
             return MediaType.GIF if "gif" in post.url else MediaType.IMAGE
-        elif getattr(post, "media", {}).get("reddit_video", None):
+        elif (getattr(post, "media", {}) or {}).get("reddit_video", None):
             return MediaType.VIDEO
 
         return MediaType.NONE
@@ -60,7 +61,7 @@ class response:
     async def __call__(self, message: Message) -> Message | list[Message]:
         bot = message.bot or exit("Couldn't access bot instance")
 
-        if not (media := await self.media):
+        if self.media_type == MediaType.NONE or not (media := await self.media):
             return await message.answer(
                 self.text,
                 parse_mode=ParseMode.HTML,

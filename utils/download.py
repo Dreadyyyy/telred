@@ -19,9 +19,7 @@ async def download(url: str) -> str:
     aurl = "/".join(parts) + "/DASH_AUDIO_128.mp4"
 
     async with TemporaryDirectory(dir=tempdir) as dir:
-        path = Path(dir)
-
-        await get_files(path, vurl, aurl)
+        await get_files(Path(dir), vurl, aurl)
 
         cmd = [
             "ffmpeg",

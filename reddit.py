@@ -3,7 +3,7 @@ from asyncpraw import Reddit
 from asyncprawcore import logging
 
 from utils.response import response
-from utils.enums import TimeFilter
+from utils.enums import FeedType, TimeFilter
 
 
 @final
@@ -23,7 +23,9 @@ class RedditInstance:
         )
         return self.reddit
 
-    async def get_top_post(self, subreddit: str, time_filter: TimeFilter) -> response:
+    async def get_post(
+        self, subreddit: str, time_filter: TimeFilter, feed_type: FeedType
+    ) -> response:
         try:
             subreddit_instance = await (
                 self.reddit or await self._instantiate_reddit()
@@ -34,7 +36,16 @@ class RedditInstance:
             )
             return response(None, "Error occured while fetching subreddit")
 
-        top_post = await anext(subreddit_instance.top(time_filter=time_filter), None)
+        feed = {
+            "top": lambda: subreddit_instance.top(time_filter=time_filter),
+            "hot": subreddit_instance.hot,
+            "new": subreddit_instance.new,
+            "controversial": lambda: subreddit_instance.controversial(
+                time_filter=time_filter
+            ),
+            "rising": subreddit_instance.rising,
+        }[feed_type]
+        top_post = await anext(feed(), None)
 
         if top_post is None:
             return response(None, "No posts during this time window")
