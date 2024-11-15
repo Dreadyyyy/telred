@@ -48,21 +48,23 @@ class response:
         match self.media_type:
             case MediaType.IMAGE | MediaType.GIF:
                 return [post.url]
+
             case MediaType.VIDEO:
-                return (
-                    [post.media["reddit_video"]["fallback_url"]]
-                    if not post.media["reddit_video"]["has_audio"]
-                    else [
+                try:
+                    return [
                         FSInputFile(
                             await download(post.media["reddit_video"]["fallback_url"])
                         )
                     ]
-                )
+                except ValueError:
+                    return [post.media["reddit_video"]["fallback_url"]]
+
             case MediaType.GALLERY:
                 return [
                     val["p"][0]["u"].split("?")[0].replace("preview", "i")
                     for val in list(post.media_metadata.values())
                 ]
+
             case MediaType.NONE | MediaType.LINK:
                 return
 
