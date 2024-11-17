@@ -23,6 +23,7 @@ class response:
             self.media_type = self._get_media_type(post)
             self.text = self._get_text(post)
             self.media = self._get_media(post)
+            self.spoiler = post.over_18
 
     @staticmethod
     def _get_media_type(post: Submission) -> MediaType:
@@ -82,7 +83,9 @@ class response:
         elif self.media_type == MediaType.GALLERY:
             media_group = MediaGroupBuilder(caption=self.text)
             for image, _ in zip(media, range(10)):
-                media_group.add_photo(image, parse_mode=ParseMode.HTML)
+                media_group.add_photo(
+                    image, parse_mode=ParseMode.HTML, has_spoiler=self.spoiler
+                )
             answer = bot.send_media_group(message.chat.id, media_group.build())
         else:
             send = {
@@ -96,6 +99,7 @@ class response:
                 media[0],
                 caption=self.text,
                 parse_mode=ParseMode.HTML,
+                has_spoiler=self.spoiler,
             )
 
         try:
