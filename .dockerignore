@@ -1,0 +1,12 @@
+.git
+__pycache__
+.env
+.venv
+pyproject.toml
+*.log
+.gitignore
+.dockerignore
+.dockerignor
+README.md
+LICENSE
+tools
