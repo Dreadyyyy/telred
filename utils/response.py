@@ -1,3 +1,6 @@
+from collections.abc import Coroutine
+from itertools import batched
+from typing import Any
 import logging
 from typing import final
 
@@ -9,6 +12,7 @@ from asyncpraw.reddit import Submission
 from utils.download import download
 from utils.enums import MediaType
 from aiogram.types import InputFile, Message, FSInputFile
+from aiogram.client.bot import Bot
 
 
 @final
@@ -61,15 +65,34 @@ class response:
                     return [post.media["reddit_video"]["fallback_url"]]
 
             case MediaType.GALLERY:
-                return [
-                    val["p"][0]["u"].split("?")[0].replace("preview", "i")
-                    for val in list(post.media_metadata.values())
-                ]
+                return [val["p"][-1]["u"] for val in list(post.media_metadata.values())]
 
             case MediaType.NONE | MediaType.LINK:
                 return
 
-    async def __call__(self, message: Message) -> Message | list[Message]:
+    def send_group(
+        self, bot: Bot, id: int, media: list[InputFile | str]
+    ) -> Coroutine[Any, Any, None]:
+        groups = list(batched(media, 10))
+
+        coroutines = []
+        for i, group in enumerate(groups):
+            media_group = MediaGroupBuilder(
+                caption=self.text + f"\n{i+1}/{len(groups)}"
+            )
+            for image in group:
+                media_group.add_photo(
+                    image, parse_mode=ParseMode.HTML, has_spoiler=self.spoiler
+                )
+            coroutines.append(bot.send_media_group(id, media_group.build()))
+
+        async def send() -> None:
+            for c in coroutines:
+                await c
+
+        return send()
+
+    async def __call__(self, message: Message) -> None:
         bot = message.bot or exit("Couldn't access bot instance")
 
         answer = None
@@ -81,12 +104,7 @@ class response:
                 parse_mode=ParseMode.HTML,
             )
         elif self.media_type == MediaType.GALLERY:
-            media_group = MediaGroupBuilder(caption=self.text)
-            for image, _ in zip(media, range(10)):
-                media_group.add_photo(
-                    image, parse_mode=ParseMode.HTML, has_spoiler=self.spoiler
-                )
-            answer = bot.send_media_group(message.chat.id, media_group.build())
+            answer = self.send_group(bot, message.chat.id, media)
         else:
             send = {
                 MediaType.IMAGE: bot.send_photo,
@@ -103,9 +121,9 @@ class response:
             )
 
         try:
-            return await answer
+            await answer
         except TelegramBadRequest as e:
             logging.error(
                 f"The following error occured when sending media of type {self.media_type}: {e}"
             )
-            return await message.answer(f"Couldn't send media")
+            await message.answer(f"Couldn't send media")
