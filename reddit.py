@@ -1,9 +1,9 @@
 from typing import final
+
 from asyncpraw import Reddit
-import logging as logg
 from asyncprawcore import NotFound, Redirect
 
-from utils.response import response
+from utils.contents import Contents, get_contents
 from utils.enums import FeedType, TimeFilter
 
 
@@ -26,13 +26,13 @@ class RedditInstance:
 
     async def get_post(
         self, subreddit: str, time_filter: TimeFilter, feed_type: FeedType
-    ) -> response:
+    ) -> Contents:
         try:
             subreddit_instance = await (
                 self.reddit or await self._instantiate_reddit()
             ).subreddit(subreddit, fetch=True)
         except (NotFound, Redirect):
-            return response(None, f"Subreddit r/{subreddit} doesn't exist")
+            raise ValueError(f"Subreddit r/{subreddit} doesn't exist")
 
         feed = {
             "top": lambda: subreddit_instance.top(time_filter=time_filter),
@@ -46,6 +46,6 @@ class RedditInstance:
         top_post = await anext(feed(), None)
 
         if top_post is None:
-            return response(None, "No posts during this time window")
+            raise ValueError("No posts during this time frame")
 
-        return response(top_post)
+        return get_contents(top_post)

@@ -54,10 +54,14 @@ class TelegramInstance:
                 return
 
             temp_message = await message.answer(f"Fetching top from r/{subreddit}")
-            await (await self.reddit_instance.get_post(subreddit, time_filter, feed))(
-                message
-            )
-            await self.bot.delete_message(message.chat.id, temp_message.message_id)
+
+            try:
+                contents = await self.reddit_instance.get_post(subreddit, time_filter, feed)
+                await contents.send(message)
+            except ValueError as e:
+                await message.answer(str(e))
+            finally:
+                await self.bot.delete_message(message.chat.id, temp_message.message_id)
 
     async def start(self) -> None:
         await self.dp.start_polling(self.bot)
