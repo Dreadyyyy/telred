@@ -1,6 +1,7 @@
 from typing import final
 
 from asyncpraw import Reddit
+from asyncpraw.exceptions import InvalidURL
 from asyncprawcore import NotFound, Redirect
 
 from utils.contents import Contents, get_contents
@@ -24,7 +25,19 @@ class RedditInstance:
         )
         return self.reddit
 
-    async def get_post(
+    async def post_from_url(self, url: str) -> Contents:
+        try:
+            submission = await (
+                self.reddit or await self._instantiate_reddit()
+            ).submission(url=url)
+        except InvalidURL:
+            raise ValueError("Invalid url")
+        except NotFound:
+            raise ValueError("Post not found")
+
+        return get_contents(submission)
+
+    async def post_from_feed(
         self, subreddit: str, time_filter: TimeFilter, feed_type: FeedType
     ) -> Contents:
         try:

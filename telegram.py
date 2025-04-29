@@ -20,7 +20,7 @@ class TelegramInstance:
 
     @staticmethod
     def process_args(cmnd: str) -> tuple[str, TimeFilter, FeedType]:
-        """Raises ValueError if there are too few arguments or time filter is invalid"""
+        """Raises ValueError if there is wrong number of arguments or time filter is invalid"""
         vals = cmnd.split(" ")
 
         if len(vals) == 2:
@@ -31,9 +31,7 @@ class TelegramInstance:
             raise ValueError("Command signature: command subreddit [time]")
 
         if time_filter not in get_args(TimeFilter):
-            raise ValueError(
-                "Time filter should be one of the following values: all, day, hour, month, week, year"
-            )
+            raise ValueError(strings.time_filter_error)
 
         feed = feed.strip("/")
 
@@ -41,7 +39,7 @@ class TelegramInstance:
 
     def _wrapper(self) -> None:
 
-        @self.dp.message(Command("start"))
+        @self.dp.message(Command("start", "help"))
         async def _(message: Message) -> None:
             await message.answer(strings.start, parse_mode=ParseMode.MARKDOWN)
 
@@ -56,7 +54,29 @@ class TelegramInstance:
             temp_message = await message.answer(f"Fetching top from r/{subreddit}")
 
             try:
-                contents = await self.reddit_instance.get_post(subreddit, time_filter, feed)
+                contents = await self.reddit_instance.post_from_feed(
+                    subreddit, time_filter, feed
+                )
+                await contents.send(message)
+            except ValueError as e:
+                await message.answer(str(e))
+            finally:
+                await self.bot.delete_message(message.chat.id, temp_message.message_id)
+
+        @self.dp.message(Command("repost"))
+        async def _(message: Message) -> None:
+            vals = (message.text or "").split(" ")
+
+            try:
+                _, url = vals
+            except ValueError:
+                message.answer("Wrong number of arguments")
+                return
+
+            temp_message = await message.answer(f"Fetching {url}")
+
+            try:
+                contents = await self.reddit_instance.post_from_url(url)
                 await contents.send(message)
             except ValueError as e:
                 await message.answer(str(e))

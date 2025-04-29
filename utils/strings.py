@@ -7,3 +7,5 @@ Welcome to telred! The following commands are supported:
 `/rising subreddit`
 Time is an optional arguments that can be one of the following values: all, day, hour, month, week 
 """
+
+time_filter_error = "Time filter should be one of the following values: all, day, hour, month, week, year"
