@@ -67,8 +67,7 @@ class Image(Media):
 
     def __init__(self, submission: Submission) -> None:
         super().__init__(submission)
-        # TODO: change how gif detection is handled, current way can cause false positives
-        self.is_gif = "gif" in submission.url
+        self.is_gif = submission.url.endswith(".gif")
 
     @override
     async def send(self, message: Message) -> None:
