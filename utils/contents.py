@@ -117,6 +117,19 @@ class Gallery(Media):
         ]
 
     @override
+    def get_text(self) -> str:
+        caption_limit = 1024
+        tags_len = len("<b></b>\n<tg-spoiler></tg-spoiler>")
+
+        text = self.submission.selftext
+        title = self.submission.title
+
+        if len(text) + len(title) + tags_len <= caption_limit:
+            return super().get_text()
+        else:
+            return f"<b>{title}</b>\n<tg-spoiler>{text[:caption_limit - len(title) - tags_len - 3] + "..."}</tg-spoiler>"
+
+    @override
     async def send(self, message: Message) -> None:
         text = self.get_text()
 
